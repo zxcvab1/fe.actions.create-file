@@ -9720,7 +9720,7 @@ async function run() {
                 await octokit.rest.git.createRef({
                     owner: owner,
                     repo: repo,
-                    ref: `refs/heads/${refDefaultBranch}`,
+                    ref: `refs/heads/${inputBranch}`,
                     sha: refSHA
                 });
                 core.info(`Create branch ${inputBranch} from ${refDefaultBranch} ${refSHA} successfull.`);
