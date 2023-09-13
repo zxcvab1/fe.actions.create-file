@@ -61,7 +61,7 @@ export async function run(): Promise<void> {
         await octokit.rest.git.createRef({
           owner: owner,
           repo: repo,
-          ref: `refs/heads/${refDefaultBranch}`,
+          ref: `refs/heads/${inputBranch}`,
           sha: refSHA
         })
 
