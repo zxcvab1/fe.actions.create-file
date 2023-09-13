@@ -9682,26 +9682,26 @@ async function run() {
         const inputMessage = core.getInput('message');
         const inputPath = core.getInput('path');
         const inputBranch = core.getInput('branch');
-        const octokit = github.getOctokit(inputToken);
         const filePath = path_1.default.join(process.cwd(), inputFile);
         const repo = inputRepo || github.context.repo.repo;
         const owner = inputOwner || github.context.repo.owner;
+        const octokit = github.getOctokit(inputToken);
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
         core.debug(`${filePath}`);
-        core.debug(github.context.ref);
-        core.debug(JSON.stringify(github.context));
         // Checking file path is exist.
         if (!fs_1.default.existsSync(filePath)) {
             throw new Error(`Path not found: ${filePath}`);
         }
         // Check inputBranch if it doesn't exist then create new branch
         if (inputBranch) {
-            const getBranchInfo = await octokit.rest.repos.getBranch({
-                branch: inputBranch,
-                owner: owner,
-                repo: repo
-            });
-            if (!getBranchInfo.data.commit.sha) {
+            try {
+                await octokit.rest.repos.getBranch({
+                    branch: inputBranch,
+                    owner: owner,
+                    repo: repo
+                });
+            }
+            catch (error) {
                 core.info(`Not found ${inputBranch} branch. Creating new branch [${inputBranch}]`);
                 // Get repo info information to get default branch
                 const getRepoInfo = await octokit.rest.repos.get({
@@ -9733,7 +9733,7 @@ async function run() {
             message: inputMessage,
             content: fileContent,
             path: inputPath,
-            branch: 'main' || 0
+            branch: inputBranch,
         });
     }
     catch (error) {
