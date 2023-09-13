@@ -33,12 +33,13 @@ export async function run(): Promise<void> {
     }
     // Check inputBranch if it doesn't exist then create new branch
     if (inputBranch) {
-      const getBranchInfo = await octokit.rest.repos.getBranch({
-        branch: inputBranch,
-        owner: owner,
-        repo: repo
-      })
-      if (!getBranchInfo.data.commit.sha) {
+      try {
+        await octokit.rest.repos.getBranch({
+          branch: inputBranch,
+          owner: owner,
+          repo: repo
+        })
+      } catch (error) {
         core.info(`Not found ${inputBranch} branch. Creating new branch [${inputBranch}]`)
 
         // Get repo info information to get default branch
