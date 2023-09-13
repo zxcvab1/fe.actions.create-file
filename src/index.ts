@@ -1,5 +1,8 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import fsAsync from 'fs/promises'
+import fs from 'fs'
+import path from 'path';
+import * as github from '@actions/github'
 
 /**
  * The main function for the action.
@@ -7,18 +10,73 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const inputFile: string = core.getInput('file')
+    const inputOwner: string = core.getInput('owner')
+    const inputRepo: string = core.getInput('repo')
+    const inputToken: string = core.getInput('token')
+    const inputMessage: string = core.getInput('message')
+    const inputPath: string = core.getInput('path')
+    const inputBranch: string = core.getInput('branch')
+
+    const filePath = path.join(process.cwd(), inputFile)
+    const repo = inputRepo || github.context.repo.repo;
+    const owner = inputOwner || github.context.repo.owner
+
+    const octokit = github.getOctokit(inputToken)
 
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    core.debug(`${filePath}`)
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    // Checking file path is exist.
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Path not found: ${filePath}`)
+    }
+    // Check inputBranch if it doesn't exist then create new branch
+    if (inputBranch) {
+      const getBranchInfo = await octokit.rest.repos.getBranch({
+        branch: inputBranch,
+        owner: owner,
+        repo: repo
+      })
+      if (!getBranchInfo.data.commit.sha) {
+        core.info(`Not found ${inputBranch} branch. Creating new branch [${inputBranch}]`)
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+        // Get repo info information to get default branch
+        const getRepoInfo = await octokit.rest.repos.get({
+          owner: owner,
+          repo: repo,
+        })
+        const refDefaultBranch = getRepoInfo.data.default_branch;
+
+        // Get default branch information to get branch SHA
+        const getBranchRefInfo = await octokit.rest.repos.getBranch({
+          owner: owner,
+          repo: repo,
+          branch: refDefaultBranch
+        })
+        const refSHA = getBranchRefInfo.data.commit.sha;
+
+        // create new branch
+        await octokit.rest.git.createRef({
+          owner: owner,
+          repo: repo,
+          ref: `refs/heads/${refDefaultBranch}`,
+          sha: refSHA
+        })
+
+        core.info(`Create branch ${inputBranch} from ${refDefaultBranch} ${refSHA} successfull.`)
+      }
+    }
+    const fileContent = await fsAsync.readFile(filePath, { encoding: 'base64' });
+
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner: owner,
+      repo: repo,
+      message: inputMessage,
+      content: fileContent,
+      path: inputPath,
+      branch: inputBranch,
+    })
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)

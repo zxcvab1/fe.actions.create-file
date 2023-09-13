@@ -1,18 +1,27 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Create file'
+description: 'Create a file and push to specific branch'
+author: 'Tien Chau'
 
-# Define your inputs here.
 inputs:
-  milliseconds:
+  file:
+    description: 'File to upload'
+    required: true
+  owner:
+    description: 'Your target owner'
+  repo:
+    description: 'Your target repo'
+  token:
+    description: 'Github personal token'
+    required: true
+  message:
+    description: 'Your commit message'
+    required: true
+  path:
     description: 'Your input description here'
     required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
+  branch:
+    description: 'Your target branch'
+    required: true
 
 runs:
   using: node20
