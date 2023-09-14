@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import fsAsync from 'fs/promises'
 import fs from 'fs'
-import path from 'path';
+import path from 'path'
 import * as github from '@actions/github'
 
 /**
@@ -19,7 +19,7 @@ export async function run(): Promise<void> {
     const inputBranch: string = core.getInput('branch')
 
     const filePath = path.join(process.cwd(), inputFile)
-    const repo = inputRepo || github.context.repo.repo;
+    const repo = inputRepo || github.context.repo.repo
     const owner = inputOwner || github.context.repo.owner
 
     const octokit = github.getOctokit(inputToken)
@@ -40,14 +40,16 @@ export async function run(): Promise<void> {
           repo: repo
         })
       } catch (error) {
-        core.info(`Not found ${inputBranch} branch. Creating new branch [${inputBranch}]`)
+        core.info(
+          `Not found ${inputBranch} branch. Creating new branch [${inputBranch}]`
+        )
 
         // Get repo info information to get default branch
         const getRepoInfo = await octokit.rest.repos.get({
           owner: owner,
-          repo: repo,
+          repo: repo
         })
-        const refDefaultBranch = getRepoInfo.data.default_branch;
+        const refDefaultBranch = getRepoInfo.data.default_branch
 
         // Get default branch information to get branch SHA
         const getBranchRefInfo = await octokit.rest.repos.getBranch({
@@ -55,14 +57,16 @@ export async function run(): Promise<void> {
           repo: repo,
           branch: refDefaultBranch
         })
-        const refSHA = getBranchRefInfo.data.commit.sha;
+        const refSHA = getBranchRefInfo.data.commit.sha
 
-        core.info(JSON.stringify({
-          owner: owner,
-          repo: repo,
-          ref: `refs/heads/${inputBranch}`,
-          sha: refSHA
-        }))
+        core.info(
+          JSON.stringify({
+            owner: owner,
+            repo: repo,
+            ref: `refs/heads/${inputBranch}`,
+            sha: refSHA
+          })
+        )
         // create new branch
         await octokit.rest.git.createRef({
           owner: owner,
@@ -71,10 +75,12 @@ export async function run(): Promise<void> {
           sha: refSHA
         })
 
-        core.info(`Create branch ${inputBranch} from ${refDefaultBranch} ${refSHA} successfull.`)
+        core.info(
+          `Create branch ${inputBranch} from ${refDefaultBranch} ${refSHA} successfull.`
+        )
       }
     }
-    const fileContent = await fsAsync.readFile(filePath, { encoding: 'base64' });
+    const fileContent = await fsAsync.readFile(filePath, { encoding: 'base64' })
 
     try {
       await octokit.rest.repos.createOrUpdateFileContents({
@@ -83,7 +89,7 @@ export async function run(): Promise<void> {
         message: inputMessage,
         content: fileContent,
         path: inputPath,
-        branch: inputBranch,
+        branch: inputBranch
       })
     } catch (error) {
       const existedFileDir = path.dirname(inputPath)
