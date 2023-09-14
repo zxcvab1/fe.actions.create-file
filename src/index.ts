@@ -36,8 +36,8 @@ export async function run(): Promise<void> {
       try {
         await octokit.rest.repos.getBranch({
           branch: inputBranch,
-          owner: owner,
-          repo: repo
+          owner,
+          repo
         })
       } catch (error) {
         core.info(
@@ -46,31 +46,31 @@ export async function run(): Promise<void> {
 
         // Get repo info information to get default branch
         const getRepoInfo = await octokit.rest.repos.get({
-          owner: owner,
-          repo: repo
+          owner,
+          repo
         })
         const refDefaultBranch = getRepoInfo.data.default_branch
 
         // Get default branch information to get branch SHA
         const getBranchRefInfo = await octokit.rest.repos.getBranch({
-          owner: owner,
-          repo: repo,
+          owner,
+          repo,
           branch: refDefaultBranch
         })
         const refSHA = getBranchRefInfo.data.commit.sha
 
         core.info(
           JSON.stringify({
-            owner: owner,
-            repo: repo,
+            owner,
+            repo,
             ref: `refs/heads/${inputBranch}`,
             sha: refSHA
           })
         )
         // create new branch
         await octokit.rest.git.createRef({
-          owner: owner,
-          repo: repo,
+          owner,
+          repo,
           ref: `refs/heads/${inputBranch}`,
           sha: refSHA
         })
@@ -84,8 +84,8 @@ export async function run(): Promise<void> {
 
     try {
       await octokit.rest.repos.createOrUpdateFileContents({
-        owner: owner,
-        repo: repo,
+        owner,
+        repo,
         message: inputMessage,
         content: fileContent,
         path: inputPath,
