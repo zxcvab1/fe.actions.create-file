@@ -57,6 +57,12 @@ export async function run(): Promise<void> {
         })
         const refSHA = getBranchRefInfo.data.commit.sha;
 
+        core.info(JSON.stringify({
+          owner: owner,
+          repo: repo,
+          ref: `refs/heads/${inputBranch}`,
+          sha: refSHA
+        }))
         // create new branch
         await octokit.rest.git.createRef({
           owner: owner,
