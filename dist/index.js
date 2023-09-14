@@ -9745,8 +9745,9 @@ async function run() {
         }
         catch (error) {
             const existedFileDir = path_1.default.dirname(inputPath);
+            const existedFileName = path_1.default.basename(inputPath);
             const existedFileURL = `https://github.com/${owner}/${repo}/tree/${inputBranch}/${existedFileDir}`;
-            throw new Error(`Create existed file [${inputPath}]. ${existedFileURL}`);
+            throw new Error(`Create existed file [${existedFileName}]. ${existedFileURL}`);
         }
     }
     catch (error) {
