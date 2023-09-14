@@ -9697,35 +9697,35 @@ async function run() {
             try {
                 await octokit.rest.repos.getBranch({
                     branch: inputBranch,
-                    owner: owner,
-                    repo: repo
+                    owner,
+                    repo
                 });
             }
             catch (error) {
                 core.info(`Not found ${inputBranch} branch. Creating new branch [${inputBranch}]`);
                 // Get repo info information to get default branch
                 const getRepoInfo = await octokit.rest.repos.get({
-                    owner: owner,
-                    repo: repo,
+                    owner,
+                    repo
                 });
                 const refDefaultBranch = getRepoInfo.data.default_branch;
                 // Get default branch information to get branch SHA
                 const getBranchRefInfo = await octokit.rest.repos.getBranch({
-                    owner: owner,
-                    repo: repo,
+                    owner,
+                    repo,
                     branch: refDefaultBranch
                 });
                 const refSHA = getBranchRefInfo.data.commit.sha;
                 core.info(JSON.stringify({
-                    owner: owner,
-                    repo: repo,
+                    owner,
+                    repo,
                     ref: `refs/heads/${inputBranch}`,
                     sha: refSHA
                 }));
                 // create new branch
                 await octokit.rest.git.createRef({
-                    owner: owner,
-                    repo: repo,
+                    owner,
+                    repo,
                     ref: `refs/heads/${inputBranch}`,
                     sha: refSHA
                 });
@@ -9733,14 +9733,21 @@ async function run() {
             }
         }
         const fileContent = await promises_1.default.readFile(filePath, { encoding: 'base64' });
-        await octokit.rest.repos.createOrUpdateFileContents({
-            owner: owner,
-            repo: repo,
-            message: inputMessage,
-            content: fileContent,
-            path: inputPath,
-            branch: inputBranch,
-        });
+        try {
+            await octokit.rest.repos.createOrUpdateFileContents({
+                owner,
+                repo,
+                message: inputMessage,
+                content: fileContent,
+                path: inputPath,
+                branch: inputBranch
+            });
+        }
+        catch (error) {
+            const existedFileDir = path_1.default.dirname(inputPath);
+            const existedFileURL = `https://github.com/${owner}/${repo}/tree/${inputBranch}/${existedFileDir}`;
+            throw new Error(`Create existed file [${inputPath}]. ${existedFileURL}`);
+        }
     }
     catch (error) {
         // Fail the workflow run if an error occurs
