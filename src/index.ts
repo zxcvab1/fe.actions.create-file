@@ -76,14 +76,20 @@ export async function run(): Promise<void> {
     }
     const fileContent = await fsAsync.readFile(filePath, { encoding: 'base64' });
 
-    await octokit.rest.repos.createOrUpdateFileContents({
-      owner: owner,
-      repo: repo,
-      message: inputMessage,
-      content: fileContent,
-      path: inputPath,
-      branch: inputBranch,
-    })
+    try {
+      await octokit.rest.repos.createOrUpdateFileContents({
+        owner: owner,
+        repo: repo,
+        message: inputMessage,
+        content: fileContent,
+        path: inputPath,
+        branch: inputBranch,
+      })
+    } catch (error) {
+      const existedFileDir = path.dirname(inputPath)
+      const existedFileURL = `https://github.com/${owner}/${repo}/tree/${inputBranch}/${existedFileDir}`
+      throw new Error(`Create existed file [${inputPath}]. ${existedFileURL}`)
+    }
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
