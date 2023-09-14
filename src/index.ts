@@ -93,8 +93,9 @@ export async function run(): Promise<void> {
       })
     } catch (error) {
       const existedFileDir = path.dirname(inputPath)
+      const existedFileName = path.basename(inputPath)
       const existedFileURL = `https://github.com/${owner}/${repo}/tree/${inputBranch}/${existedFileDir}`
-      throw new Error(`Create existed file [${inputPath}]. ${existedFileURL}`)
+      throw new Error(`Create existed file [${existedFileName}]. ${existedFileURL}`)
     }
   } catch (error) {
     // Fail the workflow run if an error occurs
