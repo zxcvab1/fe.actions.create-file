@@ -17,6 +17,7 @@ export async function run(): Promise<void> {
     const inputMessage: string = core.getInput('message')
     const inputPath: string = core.getInput('path')
     const inputBranch: string = core.getInput('branch')
+    const inputUpdatedFile: string = core.getInput('update-file')
 
     const filePath = path.join(process.cwd(), inputFile)
     const repo = inputRepo || github.context.repo.repo
@@ -81,6 +82,20 @@ export async function run(): Promise<void> {
       }
     }
     const fileContent = await fsAsync.readFile(filePath, { encoding: 'base64' })
+    let fileSHA: string | undefined = undefined
+
+    if (inputUpdatedFile) {
+      try {
+        const fileInfo = (await octokit.rest.repos.getContent({
+          owner,
+          repo,
+          path: inputUpdatedFile
+        })) as { data: { sha: string } }
+        fileSHA = fileInfo.data.sha
+      } catch (error) {
+        core.warning(`Not found update-file > ${inputUpdatedFile}`)
+      }
+    }
 
     try {
       await octokit.rest.repos.createOrUpdateFileContents({
@@ -89,7 +104,8 @@ export async function run(): Promise<void> {
         message: inputMessage,
         content: fileContent,
         path: inputPath,
-        branch: inputBranch
+        branch: inputBranch,
+        sha: fileSHA
       })
     } catch (error) {
       const existedFileDir = path.dirname(inputPath)

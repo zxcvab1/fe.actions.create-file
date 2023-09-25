@@ -22,6 +22,8 @@ inputs:
   branch:
     description: 'Your target branch'
     required: true
+  update-file:
+    description: 'Update existed file'
 
 runs:
   using: node20

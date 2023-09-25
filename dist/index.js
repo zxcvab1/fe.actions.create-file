@@ -9682,6 +9682,7 @@ async function run() {
         const inputMessage = core.getInput('message');
         const inputPath = core.getInput('path');
         const inputBranch = core.getInput('branch');
+        const inputUpdatedFile = core.getInput('update-file');
         const filePath = path_1.default.join(process.cwd(), inputFile);
         const repo = inputRepo || github.context.repo.repo;
         const owner = inputOwner || github.context.repo.owner;
@@ -9733,6 +9734,20 @@ async function run() {
             }
         }
         const fileContent = await promises_1.default.readFile(filePath, { encoding: 'base64' });
+        let fileSHA = undefined;
+        if (inputUpdatedFile) {
+            try {
+                const fileInfo = (await octokit.rest.repos.getContent({
+                    owner,
+                    repo,
+                    path: inputUpdatedFile
+                }));
+                fileSHA = fileInfo.data.sha;
+            }
+            catch (error) {
+                core.warning(`Not found update-file > ${inputUpdatedFile}`);
+            }
+        }
         try {
             await octokit.rest.repos.createOrUpdateFileContents({
                 owner,
@@ -9740,7 +9755,8 @@ async function run() {
                 message: inputMessage,
                 content: fileContent,
                 path: inputPath,
-                branch: inputBranch
+                branch: inputBranch,
+                sha: fileSHA
             });
         }
         catch (error) {
