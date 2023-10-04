@@ -9690,7 +9690,8 @@ async function run() {
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
         core.debug(`${filePath}`);
         // Checking file path is exist.
-        if (!fs_1.default.existsSync(filePath)) {
+        const isFileSymlink = (await promises_1.default.lstat(filePath)).isSymbolicLink();
+        if (!fs_1.default.existsSync(filePath) && !isFileSymlink) {
             throw new Error(`Path not found: ${filePath}`);
         }
         // Check inputBranch if it doesn't exist then create new branch
@@ -9733,7 +9734,13 @@ async function run() {
                 core.info(`Create branch ${inputBranch} from ${refDefaultBranch} ${refSHA} successfull.`);
             }
         }
-        const fileContent = await promises_1.default.readFile(filePath, { encoding: 'base64' });
+        let fileContent = '';
+        if (isFileSymlink) {
+            fileContent = await promises_1.default.readlink(filePath, { encoding: 'base64' });
+        }
+        else {
+            fileContent = await promises_1.default.readFile(filePath, { encoding: 'base64' });
+        }
         let fileSHA = undefined;
         if (inputUpdatedFile) {
             try {

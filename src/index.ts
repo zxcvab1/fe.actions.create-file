@@ -29,7 +29,8 @@ export async function run(): Promise<void> {
     core.debug(`${filePath}`)
 
     // Checking file path is exist.
-    if (!fs.existsSync(filePath)) {
+    const isFileSymlink = (await fsAsync.lstat(filePath)).isSymbolicLink()
+    if (!fs.existsSync(filePath) && !isFileSymlink) {
       throw new Error(`Path not found: ${filePath}`)
     }
     // Check inputBranch if it doesn't exist then create new branch
@@ -81,7 +82,13 @@ export async function run(): Promise<void> {
         )
       }
     }
-    const fileContent = await fsAsync.readFile(filePath, { encoding: 'base64' })
+
+    let fileContent = ''
+    if (isFileSymlink) {
+      fileContent = await fsAsync.readlink(filePath, { encoding: 'base64' })
+    } else {
+      fileContent = await fsAsync.readFile(filePath, { encoding: 'base64' })
+    }
     let fileSHA: string | undefined = undefined
 
     if (inputUpdatedFile) {
