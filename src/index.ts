@@ -85,6 +85,9 @@ export async function run(): Promise<void> {
 
     let fileContent = ''
     if (isFileSymlink) {
+      core.warning(
+        'Update symlink file is not work, the result file just the symlink as plain text.'
+      )
       fileContent = await fsAsync.readlink(filePath, { encoding: 'base64' })
     } else {
       fileContent = await fsAsync.readFile(filePath, { encoding: 'base64' })
@@ -93,19 +96,22 @@ export async function run(): Promise<void> {
 
     if (inputUpdatedFile) {
       try {
+        core.info(`Get exist file SHA. [${inputUpdatedFile}]`)
         const fileInfo = (await octokit.rest.repos.getContent({
           owner,
           repo,
           path: inputUpdatedFile
-        })) as { data: { sha: string } }
-        fileSHA = fileInfo.data.sha
+        })) as { data: { sha: string; name: string; path: string } }
+        const { sha, name, path: repoFilePath } = fileInfo.data
+        fileSHA = sha
+        core.info(`Exist file [${name}] SHA [${sha}] path [${repoFilePath}]`)
       } catch (error) {
         core.warning(`Not found update-file > ${inputUpdatedFile}`)
       }
     }
 
     try {
-      await octokit.rest.repos.createOrUpdateFileContents({
+      const createFilePayload = {
         owner,
         repo,
         message: inputMessage,
@@ -113,7 +119,9 @@ export async function run(): Promise<void> {
         path: inputPath,
         branch: inputBranch,
         sha: fileSHA
-      })
+      }
+      core.debug(JSON.stringify(createFilePayload, null, 2))
+      await octokit.rest.repos.createOrUpdateFileContents(createFilePayload)
     } catch (error) {
       const existedFileDir = path.dirname(inputPath)
       const existedFileName = path.basename(inputPath)

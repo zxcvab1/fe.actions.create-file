@@ -9736,6 +9736,7 @@ async function run() {
         }
         let fileContent = '';
         if (isFileSymlink) {
+            core.warning('Update symlink file is not work, the result file just the symlink as plain text.');
             fileContent = await promises_1.default.readlink(filePath, { encoding: 'base64' });
         }
         else {
@@ -9744,19 +9745,22 @@ async function run() {
         let fileSHA = undefined;
         if (inputUpdatedFile) {
             try {
+                core.info(`Get exist file SHA. [${inputUpdatedFile}]`);
                 const fileInfo = (await octokit.rest.repos.getContent({
                     owner,
                     repo,
                     path: inputUpdatedFile
                 }));
-                fileSHA = fileInfo.data.sha;
+                const { sha, name, path: repoFilePath } = fileInfo.data;
+                fileSHA = sha;
+                core.info(`Exist file [${name}] SHA [${sha}] path [${repoFilePath}]`);
             }
             catch (error) {
                 core.warning(`Not found update-file > ${inputUpdatedFile}`);
             }
         }
         try {
-            await octokit.rest.repos.createOrUpdateFileContents({
+            const createFilePayload = {
                 owner,
                 repo,
                 message: inputMessage,
@@ -9764,7 +9768,9 @@ async function run() {
                 path: inputPath,
                 branch: inputBranch,
                 sha: fileSHA
-            });
+            };
+            core.debug(JSON.stringify(createFilePayload, null, 2));
+            await octokit.rest.repos.createOrUpdateFileContents(createFilePayload);
         }
         catch (error) {
             const existedFileDir = path_1.default.dirname(inputPath);
